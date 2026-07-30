@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useApi } from '../../services/api';
 
-export type TreeLoadMode = 'lazy' | 'full';
-
-export const useFetchData = <T,> (url: string, id: Number, loadMode: TreeLoadMode = 'lazy') => {
+export const useFetchData = <T,> (url:String, id:Number) => {
     const api = useApi(); //обязательно использовать <AxiosProvider>
     const [data, setData] = useState<T[]>([]);
     const [loading, setLoading] = useState(false);
@@ -13,15 +11,9 @@ export const useFetchData = <T,> (url: string, id: Number, loadMode: TreeLoadMod
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Full endpoint уже возвращает ACL-корни с потомками, поэтому второй запрос не нужен.
-                if (loadMode === 'full') {
-                    const data = (await api.get(url)).data;
-                    setData(data);
-                } else {
-                    const reqApi = `${url}/${id}`;
-                    const data = (await api.get(reqApi)).data;
-                    setData(Array.of(data));
-                }
+                const reqApi = `${url}/${id}`;
+                const data = (await api.get(reqApi)).data;
+                setData(Array.of(data));
                 setError(null);
             } catch(err){
                 setError(err.message);
@@ -30,14 +22,9 @@ export const useFetchData = <T,> (url: string, id: Number, loadMode: TreeLoadMod
             }
         };
         fetchData();
-    }, [api, id, loadMode, url]);
+    }, []);
 
     const fetchChildren = useCallback(async (parentId,) => {
-        // Защита контракта full-режима: вложенные узлы уже пришли первым GET.
-        if (loadMode === 'full') {
-            return;
-        }
-
         const reqApi = `${url}/${parentId}/children`;
         const children = (await api.get(reqApi)).data;
         setData(prev => {
@@ -55,7 +42,7 @@ export const useFetchData = <T,> (url: string, id: Number, loadMode: TreeLoadMod
             return updateNode(prev);
         })        
         
-    }, [api, loadMode, url])
+    }, [])
 
     return {
         data,
