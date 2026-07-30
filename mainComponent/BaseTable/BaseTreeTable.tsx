@@ -2,20 +2,17 @@ import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import { flexRender, getCoreRowModel, getExpandedRowModel, getPaginationRowModel, TableOptions, useReactTable } from "@tanstack/react-table";
 import React, { useState } from "react";
 import { useFetchData } from "../BaseTable/hooks/useFetchTreeData";
-import type { TreeLoadMode } from "../BaseTable/hooks/useFetchTreeData";
 
-export interface BaseTreeTableProps<TData> extends Partial<TableOptions<TData>>{
+interface BaseTreeTableProps<TData> extends Partial<TableOptions<TData>>{
     url: string;
     columns: ColumnDef<TData>[];
     setSelectedId?: any;
     setIsLeaf?:any;
     defColumnVisibility?: VisibilityState;
-    /** Полный GET возвращает TreeNode[] с рекурсивными children. */
-    loadMode?: TreeLoadMode;
 }
 
-export const BaseTreeTable = <TData,>({url, columns, setSelectedId, setIsLeaf, defColumnVisibility, loadMode = 'lazy', ...props}: BaseTreeTableProps<TData>) =>{
-    const {data, loading, setData, fetchChildren} = useFetchData<TData>(url, 1000242, loadMode);
+export const BaseTreeTable = <TData,>({url, columns, setSelectedId, setIsLeaf, defColumnVisibility, ...props}: BaseTreeTableProps<TData>) =>{
+    const {data, loading, setData, fetchChildren} = useFetchData<TData>(url, 1000242);
     const [expanded, setExpanded] = useState({});
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defColumnVisibility || {})
@@ -41,9 +38,8 @@ export const BaseTreeTable = <TData,>({url, columns, setSelectedId, setIsLeaf, d
                 .filter(id => newExpanded[id] && !expanded[id])
                 .forEach(rowId => {
                     const row = table.getRow(rowId);
-                    // Lazy-ветка сохраняет старый контракт, full-ветка работает только с children ответа.
                     //@ts-ignore                    
-                    if (loadMode === 'lazy' && row.getCanExpand() && !row.original.children) {
+                    if (row.getCanExpand() && !row.original.children) {
                         //@ts-ignore
                         fetchChildren(row.original.id);
                 }});
@@ -59,7 +55,7 @@ export const BaseTreeTable = <TData,>({url, columns, setSelectedId, setIsLeaf, d
             if(setSelectedId){
                 setSelectedId(row.original.id);
             }
-            setIsLeaf?.(!row.original.hasChildren);
+            setIsLeaf(!row.original.hasChildren);
         }        
     };
     
